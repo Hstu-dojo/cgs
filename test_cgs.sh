@@ -29,7 +29,7 @@ if [ ! -f test_example.c ]; then
 fi
 
 echo "Compiling test_example.c..."
-clang -emit-llvm -c -g -O0 test_example.c -o test_example.bc
+clang -emit-llvm -c -g -O0 -I/workspaces/cgs/klee/include test_example.c -o test_example.bc
 echo "✓ Compiled to test_example.bc"
 echo ""
 
@@ -44,16 +44,16 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "STEP 3: Running KLEE Symbolic Execution"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Command: ./klee-docker.sh --sym-args 0 2 4 test_example.bc"
+echo "Command: ./klee-docker.sh test_example.bc"
 echo ""
 echo "This tells KLEE to:"
-echo "  • Generate 0-2 symbolic arguments"
-echo "  • Each argument can be up to 4 bytes"
+echo "  • Symbolically execute the bitcode"
 echo "  • Explore all possible execution paths"
+echo "  • Generate test cases for each path"
 echo ""
 read -p "Press Enter to start KLEE symbolic execution..."
 
-./klee-docker.sh --sym-args 0 2 4 test_example.bc
+./klee-docker.sh test_example.bc
 
 echo ""
 echo "✓ KLEE finished execution"
@@ -64,10 +64,15 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "STEP 4: Examining Results"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if [ ! -d "klee-last" ]; then
+# Find the most recent klee-out directory
+KLEE_OUT=$(ls -td klee-out-* 2>/dev/null | head -1)
+if [ -z "$KLEE_OUT" ]; then
     echo "✗ Error: No KLEE output directory found"
     exit 1
 fi
+
+# Create symlink for convenience
+ln -sf "$KLEE_OUT" klee-last
 
 echo "Output directory: klee-last/ (symlink to latest run)"
 echo ""
